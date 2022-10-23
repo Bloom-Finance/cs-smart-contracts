@@ -1,7 +1,7 @@
 //SPDX-License-Identifier:MIT
-pragma solidity ^0.8.17;
-import "@openzeppelin/contracts/utils/Strings.sol";
+pragma solidity 0.7.0;
 import "./Base64.sol";
+import "./JsmnLib.sol";
 
 // NFTExample ={
 //     legalContractOwner:'0xx',
@@ -13,7 +13,6 @@ import "./Base64.sol";
 //     precision:'',
 //     token:'',
 // }
-
 contract NFTReceiptsCS {
     function transferFrom(
         address from,
@@ -26,20 +25,20 @@ contract NFTReceiptsCS {
     function tokenURI(uint256 tokenId) external view returns (string memory) {}
 }
 
-// library JSONParser {
-//     function parse(string memory json, uint256 numberElements)
-//         internal
-//         pure
-//         returns (
-//             uint256,
-//             Token[] memory tokens,
-//             uint256
-//         )
-//     {}
-// }
+struct Token {
+    uint256 start;
+    bool startSet;
+    uint256 end;
+    bool endSet;
+    uint8 size;
+}
+
+struct NFTMetadata {
+    string key;
+    string value;
+}
 
 contract CustodialNFT {
-    using Strings for uint256;
     NFTReceiptsCS private nftReceiptsCS;
 
     constructor(address NFTReceiptsAddress) {
@@ -60,7 +59,39 @@ contract CustodialNFT {
         return myJson;
     }
 
-    function buyNFT(uint256 tokenId) public view returns (string memory) {
-        // staff
+    function buyNFT() public pure returns (string memory) {
+        NFTMetadata[] memory myArray = proccessJSON('{"key":"alex"}', 5);
+        return myArray[0].value;
+    }
+
+    // This functions proccess a JSON and then saves each keys to a storage map
+    function proccessJSON(string memory json, uint256 quantity)
+        internal
+        pure
+        returns (NFTMetadata[] memory)
+    {
+        JsmnSolLib.Token[] memory tokens;
+        NFTMetadata[] memory nftMetadata = new NFTMetadata[](quantity);
+        uint256 returnValue;
+
+        uint256 actualNum;
+
+        (returnValue, tokens, actualNum) = JsmnSolLib.parse(json, quantity);
+
+        // for (uint256 i = 0; i < tokens.length; i++) {
+
+        // }
+        string memory key = JsmnSolLib.getBytes(
+            json,
+            tokens[1].start,
+            tokens[1].end
+        );
+        string memory value = JsmnSolLib.getBytes(
+            json,
+            tokens[2].start,
+            tokens[2].end
+        );
+        nftMetadata[0] = NFTMetadata(key, value);
+        return nftMetadata;
     }
 }

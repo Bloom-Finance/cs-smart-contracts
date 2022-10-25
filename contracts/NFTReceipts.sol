@@ -50,12 +50,20 @@ contract NFTReceipts is ERC721, ERC721Enumerable, ERC721URIStorage {
         return super.supportsInterface(interfaceId);
     }
 
-    function mint(address contractOwner, string[] memory uri) public {
+    function mint(string[] memory uri) public {
         for (uint256 i = 0; i < uri.length; i++) {
             uint256 tokenId = _tokenIdCounter.current();
             _tokenIdCounter.increment();
-            _safeMint(contractOwner, tokenId);
+            _safeMint(msg.sender, tokenId);
             _setTokenURI(tokenId, uri[i]);
+        }
+    }
+
+    function transferMultipleNFTS(uint256[] memory tokenIds, address to)
+        public
+    {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            _transfer(msg.sender, to, tokenIds[i]);
         }
     }
 }

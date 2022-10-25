@@ -1,13 +1,13 @@
 //SPDX-License-Identifier:MIT
 pragma solidity 0.7.0;
 import "./Base64.sol";
-import "./JsmnLib.sol";
+import "./jsonParser.sol";
 
 // NFTExample ={
-//     legalContractOwner:'0xx',
 //     legalContractBroker:'0xx',
 //     legalContractFee:'0xx',
 //     legalContractDescription:'0xx',
+//     legalContractOwner:'0xx',
 //     legalContractName:'0xx',
 //     amount:'',
 //     precision:'',
@@ -25,19 +25,6 @@ contract NFTReceiptsCS {
     function tokenURI(uint256 tokenId) external view returns (string memory) {}
 }
 
-struct Token {
-    uint256 start;
-    bool startSet;
-    uint256 end;
-    bool endSet;
-    uint8 size;
-}
-
-struct NFTMetadata {
-    string key;
-    string value;
-}
-
 contract CustodialNFT {
     NFTReceiptsCS private nftReceiptsCS;
 
@@ -49,7 +36,7 @@ contract CustodialNFT {
         return address(nftReceiptsCS);
     }
 
-    function seeNFTMetaData(uint256 tokenId)
+    function getNFTMetaData(uint256 tokenId)
         public
         view
         returns (string memory)
@@ -59,39 +46,100 @@ contract CustodialNFT {
         return myJson;
     }
 
-    function buyNFT() public pure returns (string memory) {
-        NFTMetadata[] memory myArray = proccessJSON('{"key":"alex"}', 5);
-        return myArray[0].value;
+    function buyNFT(uint256 tokenId) public payable returns (address) {
+        string memory metadata = getNFTMetaData(tokenId);
+        address contractOwner;
+        uint256 amount;
+        NFTMetadata[] memory myArray = JsonParser.proccessJSON(
+            metadata,
+            JsonParser.calculateQuantity(2)
+        );
+        for (uint256 i = 0; i < myArray.length; i++) {
+            if (compareStrings(myArray[i].key, "legalContractOwner")) {
+                contractOwner = toAddress(myArray[i].value);
+            }
+            if (compareStrings(myArray[i].key, "amount")) {
+                (amount, ) = strToUint(myArray[i].value);
+            }
+        }
+        require(msg.value == amount, "You must pay the exact amount");
+        nftReceiptsCS.transferFrom(address(this), msg.sender, tokenId);
+        payable(contractOwner).transfer(amount);
     }
 
-    // This functions proccess a JSON and then saves each keys to a storage map
-    function proccessJSON(string memory json, uint256 quantity)
+    function compareStrings(string memory a, string memory b)
         internal
         pure
-        returns (NFTMetadata[] memory)
+        returns (bool)
     {
-        JsmnSolLib.Token[] memory tokens;
-        NFTMetadata[] memory nftMetadata = new NFTMetadata[](quantity);
-        uint256 returnValue;
+        return (keccak256(abi.encodePacked((a))) ==
+            keccak256(abi.encodePacked((b))));
+    }
 
-        uint256 actualNum;
+    function fromHexChar(uint8 c) public pure returns (uint8) {
+        if (bytes1(c) >= bytes1("0") && bytes1(c) <= bytes1("9")) {
+            return c - uint8(bytes1("0"));
+        }
+        if (bytes1(c) >= bytes1("a") && bytes1(c) <= bytes1("f")) {
+            return 10 + c - uint8(bytes1("a"));
+        }
+        if (bytes1(c) >= bytes1("A") && bytes1(c) <= bytes1("F")) {
+            return 10 + c - uint8(bytes1("A"));
+        }
+        return 0;
+    }
 
-        (returnValue, tokens, actualNum) = JsmnSolLib.parse(json, quantity);
+    function hexStringToAddress(string memory s)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        bytes memory ss = bytes(s);
+        require(ss.length % 2 == 0); // length must be even
+        bytes memory r = new bytes(ss.length / 2);
+        for (uint256 i = 0; i < ss.length / 2; ++i) {
+            r[i] = bytes1(
+                fromHexChar(uint8(ss[2 * i])) *
+                    16 +
+                    fromHexChar(uint8(ss[2 * i + 1]))
+            );
+        }
 
-        // for (uint256 i = 0; i < tokens.length; i++) {
+        return r;
+    }
 
-        // }
-        string memory key = JsmnSolLib.getBytes(
-            json,
-            tokens[1].start,
-            tokens[1].end
-        );
-        string memory value = JsmnSolLib.getBytes(
-            json,
-            tokens[2].start,
-            tokens[2].end
-        );
-        nftMetadata[0] = NFTMetadata(key, value);
-        return nftMetadata;
+    function toAddress(string memory s) internal pure returns (address) {
+        bytes memory _bytes = hexStringToAddress(s);
+        require(_bytes.length >= 1 + 20, "toAddress_outOfBounds");
+        address tempAddress;
+
+        assembly {
+            tempAddress := div(
+                mload(add(add(_bytes, 0x20), 1)),
+                0x1000000000000000000000000
+            )
+        }
+
+        return tempAddress;
+    }
+
+    function strToUint(string memory _str)
+        internal
+        pure
+        returns (uint256 res, bool err)
+    {
+        for (uint256 i = 0; i < bytes(_str).length; i++) {
+            if (
+                (uint8(bytes(_str)[i]) - 48) < 0 ||
+                (uint8(bytes(_str)[i]) - 48) > 9
+            ) {
+                return (0, false);
+            }
+            res +=
+                (uint8(bytes(_str)[i]) - 48) *
+                10**(bytes(_str).length - i - 1);
+        }
+
+        return (res, true);
     }
 }

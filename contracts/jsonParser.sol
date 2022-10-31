@@ -38,8 +38,8 @@ library JsonParser {
         (returnValue, tokens, actualNum) = JsmnSolLib.parse(json, length);
 
         for (uint256 i = 1; i < tokens.length; i++) {
-            uint256 indexKey = i == 1 ? i : i + 1;
-            uint256 indexValue = i == 1 ? i + 1 : i + 2;
+            uint256 indexKey = i == 1 ? i : i + (i - 1);
+            uint256 indexValue = i == 1 ? i + 1 : i + i;
             uint256 metadataIndex = i - 1;
             if (indexValue > length - 1) {
                 break;

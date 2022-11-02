@@ -1,6 +1,6 @@
 //SPDX-License-Identifier:MIT
 import "./JsmnLib.sol";
-pragma solidity 0.7.0;
+pragma solidity 0.8.0;
 struct Token {
     uint256 start;
     bool startSet;

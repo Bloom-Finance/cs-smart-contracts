@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.0;
+pragma solidity 0.8.0;
 
 // Embbed library that decodes base64 strings
 library Base64 {

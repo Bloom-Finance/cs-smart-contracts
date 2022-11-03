@@ -43,8 +43,13 @@ contract CustodialNFT {
     NFTReceiptsCS private nftReceiptsCS;
     mapping(address => Receipt[]) s_receivedReceipts;
     mapping(address => Receipt[]) s_paidReceipts;
+    address private DAI;
+    IERC20 private dai;
 
-    constructor(address NFTReceiptsAddress) {
+    //TODO: Add as a parameter the contract address of DAI
+    constructor(address NFTReceiptsAddress, address daiAddress) {
+        DAI = daiAddress;
+        dai = IERC20(DAI);
         nftReceiptsCS = NFTReceiptsCS(NFTReceiptsAddress);
     }
 
@@ -63,6 +68,10 @@ contract CustodialNFT {
     }
 
     function buyNFTWithDAI(uint256 tokenId, uint256 amountToPay) public {
+        require(
+            dai.transferFrom(msg.sender, address(this), amountToPay),
+            "Transfer failed"
+        );
         TokenMetadata memory tokenMetadata = getAsStructToken(tokenId);
         require(
             tokenMetadata.amount == amountToPay,
@@ -72,6 +81,21 @@ contract CustodialNFT {
             Strings.compareStrings(tokenMetadata.token, "DAI"),
             "You are not paying the right token"
         );
+        if (tokenMetadata.brokerFee > 0) {
+            uint256 brokerFee = calculateFee(
+                tokenMetadata.amount,
+                tokenMetadata.brokerFee
+            );
+            dai.transfer(tokenMetadata.broker, brokerFee);
+            dai.transfer(tokenMetadata.owner, amountToPay - brokerFee);
+        } else {
+            dai.transfer(tokenMetadata.owner, amountToPay);
+        }
+        nftReceiptsCS.transferFrom(address(this), msg.sender, tokenId);
+        s_receivedReceipts[tokenMetadata.owner].push(
+            Receipt(tokenId, block.timestamp)
+        );
+        s_paidReceipts[msg.sender].push(Receipt(tokenId, block.timestamp));
     }
 
     function buyNFT(uint256 tokenId) public payable {

@@ -18,6 +18,7 @@ const config: HardhatUserConfig = {
         mumbai: {
             url: process.env.TESTNET_RPC,
             accounts: [process.env.PRIVATE_KEY as string],
+            chainId: 80001,
         },
     },
     etherscan: {

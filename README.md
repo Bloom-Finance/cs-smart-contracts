@@ -17,15 +17,15 @@ All testing is done using [Polygon Mumbai Testnet 🔮](https://mumbai.polygonsc
 
 ### Last stable testnet contracts for Mumbai ⚙️
 
--   [NFTReceipts 🎨](https://mumbai.polygonscan.com/address/0xb7748048d22be6b10ddcc4d214e492a39436bcea): 0x63676f1Aaad4C5a9443Fb3bd1FEF6611F6A5E84E
--   [CustodialContract 👮‍♂️](https://mumbai.polygonscan.com/address/0xFfC44907086352F6A7236bef8f126E88cB8a2EB9): 0x0CDc2A86A61935E4AB920054Fd204a6bB713BDC4
+-   [NFTReceipts 🎨](https://mumbai.polygonscan.com/address/0x1d7cb01027c1c3dfe7494246b4e7c6e7c39af95b): 0x1D7CB01027C1C3dfE7494246B4e7c6E7c39aF95B
+-   [CustodialContract 👮‍♂️](https://mumbai.polygonscan.com/address/0x5D8839b19Bc7f772eE486791813CA5E92c3F530E): 0x5D8839b19Bc7f772eE486791813CA5E92c3F530E
 
 ### Tokens contracts addresses for Mumbai Testnet ⚙️
 
 | Tokens |                                  Addresses |
 | ------ | -----------------------------------------: |
 | DAI    | 0x001B3B4d0F3714Ca98ba10F6042DaEbF0B1B7b6F |
-| USDT   | 0x2DB274b9E5946855B83e9Eac5aA6Dcf2c68a95F3 |
+| USDT   | 0xA02f6adc7926efeBBd59Fd43A84f4E0c0c91e832 |
 | USDC   | 0xe6b8a5CF854791412c1f6EFC7CAf629f5Df1c747 |
 
 ### Tokens contracts addresses for POLYGON Mainnet 🟣

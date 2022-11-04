@@ -1,21 +1,10 @@
 //SPDX-License-Identifier:MIT
 pragma solidity 0.8.0;
-pragma experimental ABIEncoderV2;
 import "./Base64.sol";
 import "./jsonParser.sol";
 import "./Strings.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-// NFTExample ={
-//     legalContractBroker:'0xx',
-//     legalContractFee:'0xx',
-//     legalContractDescription:'0xx',
-//     legalContractOwner:'0xx',
-//     legalContractName:'0xx',
-//     amount:'',
-//     precision:'',
-//     token:'',
-// }
 contract NFTReceiptsCS {
     function transferFrom(
         address from,
@@ -26,6 +15,10 @@ contract NFTReceiptsCS {
     function ownerOf(uint256 tokenId) external view returns (address) {}
 
     function tokenURI(uint256 tokenId) external view returns (string memory) {}
+}
+
+contract BloomTransfers {
+    function sendDAIToAddress(address to, uint256 amount) external {}
 }
 struct Receipt {
     uint256 tokenId;
@@ -41,15 +34,18 @@ struct TokenMetadata {
 
 contract CustodialNFT {
     NFTReceiptsCS private nftReceiptsCS;
+    BloomTransfers private bloomTransfers;
     mapping(address => Receipt[]) s_receivedReceipts;
     mapping(address => Receipt[]) s_paidReceipts;
     address private DAI;
+    address constant BLOOMTRANSFERS =
+        0xAfDa87fb56C155be167eD088cD54A3e70A5dEC73;
     IERC20 private dai;
 
-    //TODO: Add as a parameter the contract address of DAI
     constructor(address NFTReceiptsAddress, address daiAddress) {
         DAI = daiAddress;
         dai = IERC20(DAI);
+        bloomTransfers = BloomTransfers(BLOOMTRANSFERS);
         nftReceiptsCS = NFTReceiptsCS(NFTReceiptsAddress);
     }
 
@@ -72,6 +68,7 @@ contract CustodialNFT {
             dai.transferFrom(msg.sender, address(this), amountToPay),
             "Transfer failed"
         );
+        require(dai.approve(BLOOMTRANSFERS, amountToPay), "Approve failed");
         TokenMetadata memory tokenMetadata = getAsStructToken(tokenId);
         require(
             tokenMetadata.amount == amountToPay,
@@ -87,9 +84,12 @@ contract CustodialNFT {
                 tokenMetadata.brokerFee
             );
             dai.transfer(tokenMetadata.broker, brokerFee);
-            dai.transfer(tokenMetadata.owner, amountToPay - brokerFee);
+            bloomTransfers.sendDAIToAddress(
+                tokenMetadata.owner,
+                amountToPay - brokerFee
+            );
         } else {
-            dai.transfer(tokenMetadata.owner, amountToPay);
+            bloomTransfers.sendDAIToAddress(tokenMetadata.owner, amountToPay);
         }
         nftReceiptsCS.transferFrom(address(this), msg.sender, tokenId);
         s_receivedReceipts[tokenMetadata.owner].push(
